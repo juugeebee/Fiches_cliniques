@@ -108,7 +108,7 @@ final = pandas.concat([patient,col_vc], axis=1)
 
 
 # Exporter csv
-final.to_csv(sortie, index=False)
+final.to_csv(sortie, index=False, encoding='utf-16')
 
 
 print('\n**********************')
