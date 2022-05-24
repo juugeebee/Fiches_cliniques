@@ -2,6 +2,8 @@
 
 import pandas
 import numpy
+import os
+
 
 print('\n*******************************')
 print('**** FICHES CLINIQUES - BM ****')
@@ -9,8 +11,12 @@ print('*******************************\n')
 
 
 # FICHIERS
-entree = 'bm_tout_sauf_SCA.txt'
-sortie = 'bm_tout_sauf_SCA_sorted.txt'
+entree = 'entree/bm_2021_panel_DIPS.csv'
+sortie = 'sortie/bm_2021_panel_DIPS_sorted.txt'
+
+if os.path.exists(sortie):
+    os.remove(sortie)
+    print('Precedent fichier de sortie supprimé.')
 
 
 ### LECTURE DU FICHIER EXPORT GENNO
@@ -21,16 +27,17 @@ raw.rename(columns={"TO_CHAR(DATEAPPROB,'DD/MM/YYYY')": "APPROBATION"}, inplace=
 raw.rename(columns={"Indications": "INDICATIONS"}, inplace=True)
 raw.rename(columns={"Réactifs": "REACTIFS"}, inplace=True)
 raw.rename(columns={"CODEORIGINE": "ORIGINE"}, inplace=True)
-raw.rename(columns={"GENE ANALYSE": "GENE_ANALYSE"}, inplace=True)
 raw.rename(columns={"GENE RESULTAT": "GENE_RESULTAT"}, inplace=True)
 raw.rename(columns={"ABM NEURO": "ABM_NEURO"}, inplace=True)
 
 raw['PRESCRIPTEUR'] = raw['NOMPRESC'] + ' ' + raw['PRENOMPRESC']
 del raw['NOMPRESC']
 del raw['PRENOMPRESC']
+del raw['GENE ANALYSE']
+
 
 cols = ['RECEPTION', 'APPROBATION', 'NC', 'PATIENT', 'DDN', 'SEXE', 'FAMILLE',
-       'DEMANDE', 'INDICATIONS', 'ACTION', 'REACTIFS', 'GENE_ANALYSE',
+       'DEMANDE', 'INDICATIONS', 'ACTION', 'REACTIFS',
        'GENE_RESULTAT', 'ABM_NEURO', 'PATHOLOGIE', 'TITRE', 'PRESCRIPTEUR', 'ORIGINE',
        'SERVICE']
 raw = raw[cols]
@@ -45,18 +52,14 @@ raw.drop_duplicates(keep = 'first', inplace=True)
 raw.sort_values(by=['DDN'], inplace=True)
 raw.sort_values(by=['PATIENT'], inplace=True)
 
-print('Nombre de lignes fichier de départ = {}\n'.format(len(raw)))
+print('Nombre de lignes fichier de départ = {}.'.format(len(raw)))
 
 
 ### SELECTION DES LIGNES AVEC UN REACTIF = 'Panel DIPS'
 panel_dips = raw[raw['REACTIFS'].str.contains('Panel DIPS|PANEL DFT_SLA_PAR_ITD', na=False)]
 panel_dips.reset_index(drop=True, inplace=True)
 
-print('Nombre de lignes "PANEL DIPS" = {}\n'.format(len(panel_dips)))
-
-
-### EXPORT DONNEES SOURCES PAR REACTIF
-panel_dips.to_csv('panel_dips.txt', index=False, sep='\t')
+print('Nombre de lignes "PANEL DIPS" = {}'.format(len(panel_dips)))
 
 
 ### RECUPER LES INDEX DES DOUBLONS
@@ -68,41 +71,44 @@ for i,e in enumerate(dup):
     if e is True:
         index_list.append(i)
 
-
 index_list_doub = []
 
-for i in range(len(index_list)-1):
-    
-    if (index_list[i] + 1 == index_list[i+1]) and\
-         (index_list[i] - 1 not in index_list_doub):
-        
-        index_list_doub.append(index_list[i] - 1)
-        index_list_doub.append(index_list[i])
-    
-    else : 
-        
-        if (index_list[i] + 1 != index_list[i+1]) and\
-         (index_list[i] - 1 != index_list[i-1]):
+if len(index_list) != 0: 
 
+    for i in range(len(index_list)-1):
+        
+        if (index_list[i] + 1 == index_list[i+1]) and\
+            (index_list[i] - 1 not in index_list_doub):
+            
             index_list_doub.append(index_list[i] - 1)
             index_list_doub.append(index_list[i])
+        
+        else : 
+            
+            if (index_list[i] + 1 != index_list[i+1]) and\
+            (index_list[i] - 1 != index_list[i-1]):
 
-        else :
+                index_list_doub.append(index_list[i] - 1)
+                index_list_doub.append(index_list[i])
 
-            index_list_doub.append(index_list[i])
+            else :
 
-if index_list[-1] - 1 not in index_list_doub :
-    index_list_doub.append(index_list[-1] - 1)
+                index_list_doub.append(index_list[i])
 
-index_list_doub.append(index_list[-1])
+    if index_list[-1] - 1 not in index_list_doub :
+        index_list_doub.append(index_list[-1] - 1)
+
+    index_list_doub.append(index_list[-1])
+
 
 
 ### COPIER LES LIGNES UNIQUES DANS LE FICHIER DE SORTIE
 
 # CREATION FICHIER SORTIE
-fichier = open("data.txt", "a")
+fichier = open(sortie, "a")
+
 fichier.write("RECEPTION\tAPPROBATION\tNC\tPATIENT\tDDN\tSEXE\tFAMILLE\t\
-       DEMANDE\tINDICATIONS\tACTION\tREACTIFS\tGENE_ANALYSE\t\
+       DEMANDE\tINDICATIONS\tACTION\tREACTIFS\t\
        GENE_RESULTAT\tABM_NEURO\tPATHOLOGIE\tTITRE\tPRESCRIPTEUR\tORIGINE\t\
        SERVICE\n")
 
@@ -123,7 +129,7 @@ for i in range(len(panel_dips)):
         panel_dips['DDN'][i]+'\t'+panel_dips['SEXE'][i]+'\t'+\
         panel_dips['FAMILLE'][i]+'\t'+panel_dips['DEMANDE'][i]+'\t'+\
         panel_dips['INDICATIONS'][i]+'\t'+panel_dips['ACTION'][i]+'\t'+\
-        panel_dips['REACTIFS'][i]+'\t'+panel_dips['GENE_ANALYSE'][i]+'\t'+\
+        panel_dips['REACTIFS'][i]+'\t'+\
         panel_dips['GENE_RESULTAT'][i]+'\t'+panel_dips['ABM_NEURO'][i]+'\t'+\
         panel_dips['PATHOLOGIE'][i]+'\t'+panel_dips['TITRE'][i]+'\t'+\
         panel_dips['PRESCRIPTEUR'][i]+'\t'+\
@@ -132,8 +138,8 @@ for i in range(len(panel_dips)):
         comptage_solo = comptage_solo + 1    
 
 
-print('Nombre de doublons = {}\n'.format(len(index_list_doub)))
-print('Nombre de lignes solo = {}'.format(comptage_solo))
+print('Nombre de lignes solo = {}.'.format(comptage_solo))
+print('Nombre de doublons = {}.'.format(len(index_list_doub)))
 
 
 start_list = []
@@ -188,7 +194,6 @@ for h in range(len(start_list)) :
         indications.append(panel_dips['INDICATIONS'][i])
         action.append(panel_dips['ACTION'][i])
         reactifs.append(panel_dips['REACTIFS'][i])
-        analyse.append(panel_dips['GENE_ANALYSE'][i])
         resultat.append(panel_dips['GENE_RESULTAT'][i])
         abm.append(panel_dips['ABM_NEURO'][i])
         patho.append(panel_dips['PATHOLOGIE'][i])
@@ -207,7 +212,6 @@ for h in range(len(start_list)) :
     indications = list(set(indications))
     action = list(set(action))
     reactifs = list(set(reactifs))
-    analyse = list(set(analyse))
     resultat = list(set(resultat))
     abm = list(set(abm))
     patho = list(set(patho))
@@ -222,7 +226,7 @@ for h in range(len(start_list)) :
             ",".join(ddn)+'\t'+",".join(sexe)+'\t'+\
             ",".join(famille)+'\t'+",".join(demande)+'\t'+\
             ",".join(indications)+'\t'+",".join(action)+'\t'+\
-            ",".join(reactifs)+'\t'+",".join(analyse)+'\t'+\
+            ",".join(reactifs)+'\t'+\
             ",".join(resultat)+'\t'+",".join(abm)+'\t'+\
             ",".join(patho)+'\t'+",".join(titre)+'\t'+\
             ",".join(prescripteur)+'\t'+\
