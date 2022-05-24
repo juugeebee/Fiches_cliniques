@@ -11,8 +11,8 @@ print('*******************************\n')
 
 
 # FICHIERS
-entree = 'entree/bm_2021_panel_DIPS.csv'
-sortie = 'sortie/bm_2021_panel_DIPS_sorted.txt'
+entree = 'entree/bm_2018_panel_DIPS.csv'
+sortie = 'sortie/bm_2018_panel_DIPS_sorted.txt'
 
 if os.path.exists(sortie):
     os.remove(sortie)
@@ -20,7 +20,7 @@ if os.path.exists(sortie):
 
 
 ### LECTURE DU FICHIER EXPORT GENNO
-raw = pandas.read_csv(entree, encoding='utf-8', sep="\t", header=[0])
+raw = pandas.read_csv(entree, encoding='utf-8', sep="\t", header=[0], dtype=str)
 
 raw.rename(columns={"TO_CHAR(DATERECEP,'DD/MM/YYYY')": "RECEPTION"}, inplace=True)
 raw.rename(columns={"TO_CHAR(DATEAPPROB,'DD/MM/YYYY')": "APPROBATION"}, inplace=True)
