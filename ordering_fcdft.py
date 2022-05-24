@@ -20,14 +20,15 @@ champs_total = ['DFTAGEXAM', 'DFTAGDEB', 'DFTATCFAM', 'DFTATCPRES', 'DFTMOD'\
 
 
 # Fichiers
-entree = 'fcdft.csv'
-sortie = 'fcdft_sorted.csv'
+entree = 'entree/fc_dft.csv'
+sortie = 'sortie/fc_dft_sorted.txt'
 
 
 ### LECTURE DU FICHIER EXPORT GENNO
 raw = pandas.read_csv(entree, encoding='utf-16', sep="\t", header=[0])
 raw.rename(columns={"DATE RECEPTION": "RECEPTION"}, inplace=True)
 
+print('\nNombre de lignes fichier de depart = {}.'.format(len(raw)))
 
 # Creer la liste stop
 longueur_raw = raw.index.stop
@@ -106,9 +107,11 @@ col_vc = pandas.DataFrame(df_list, columns=champs_total)
 # Structure dataframe final
 final = pandas.concat([patient,col_vc], axis=1)
 
+print('Nombre de lignes fichier de sortie = {}.'.format(len(final)))
+
 
 # Exporter csv
-final.to_csv(sortie, index=False, encoding='utf-16')
+final.to_csv(sortie, index=False, encoding='utf-8', sep='\t')
 
 
 print('\n**********************')

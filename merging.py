@@ -9,17 +9,12 @@ print('*****************\n')
 
 
 # Fichiers
-fc = 'fcdft_sorted.txt'
-bm = 'bm_tout_sauf_SCA_sorted.txt'
+fc = 'sortie/fc_dft_sorted.txt'
+bm = 'sortie/bm_2021_panel_DIPS_sorted.txt'
 sortie = 'fc_bm_dft.txt'
 
 ### FICHES CLINIQUES
-df_fc = pandas.read_csv(fc, encoding='utf-16', sep="\t", header=[0])
-
-# CONCATENER LES NOMS ET PRENOMS
-df_fc['PATIENT'] = df_fc['NOM'] + " " + df_fc['PRENOM']
-del df_fc['NOM']
-del df_fc['PRENOM']
+df_fc = pandas.read_csv(fc, encoding='utf-8', sep="\t", header=[0])
 
 print('Nombre de lignes Fiches Cliniques : {}.'.format(len(df_fc)))
 
@@ -31,8 +26,9 @@ print('Nombre de lignes BM : {}.'.format(len(df_bm)))
 
 
 ### MERGING
-merge = df_fc.merge(df_bm, how='left', on=['PATIENT', 'DDN', 'FAMILLE',\
- 'PATHOLOGIE', 'RECEPTION'])
+merge = df_fc.merge(df_bm, how='outer',\
+ left_on='DEMANDE', right_on='       DEMANDE', \
+ suffixes=('_fc', '_bm'))
 
 print('Nombre de lignes final : {}.'.format(len(merge)))
 
