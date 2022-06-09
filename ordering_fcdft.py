@@ -21,7 +21,7 @@ champs_total = ['DFTAGEXAM', 'DFTAGDEB', 'DFTATCFAM', 'DFTATCPRES', 'DFTMOD'\
 
 # Fichiers
 entree = 'entree/fc_dft.csv'
-sortie = 'sortie/fc_dft_sorted.txt'
+sortie = 'fc_dft_sorted.txt'
 
 
 ### LECTURE DU FICHIER EXPORT GENNO

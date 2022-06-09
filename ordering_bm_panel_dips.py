@@ -16,7 +16,7 @@ sortie = 'sortie/bm_2018_panel_DIPS_sorted.txt'
 
 if os.path.exists(sortie):
     os.remove(sortie)
-    print('Precedent fichier de sortie supprimé.')
+    print('Precedent fichier de sortie supprime.\n')
 
 
 ### LECTURE DU FICHIER EXPORT GENNO
@@ -59,7 +59,7 @@ print('Nombre de lignes fichier de départ = {}.'.format(len(raw)))
 panel_dips = raw[raw['REACTIFS'].str.contains('Panel DIPS|PANEL DFT_SLA_PAR_ITD', na=False)]
 panel_dips.reset_index(drop=True, inplace=True)
 
-print('Nombre de lignes "PANEL DIPS" = {}'.format(len(panel_dips)))
+print('Nombre de lignes "Panel DIPS" = {}.'.format(len(panel_dips)))
 
 
 ### RECUPER LES INDEX DES DOUBLONS
@@ -99,7 +99,6 @@ if len(index_list) != 0:
         index_list_doub.append(index_list[-1] - 1)
 
     index_list_doub.append(index_list[-1])
-
 
 
 ### COPIER LES LIGNES UNIQUES DANS LE FICHIER DE SORTIE
