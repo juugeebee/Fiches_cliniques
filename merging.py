@@ -81,6 +81,8 @@ print('*****************\n')
 df_fc = pandas.read_csv(fc, encoding='utf-8', sep="\t", header=[0])
 print('Nombre de lignes Fiches Cliniques : {}.'.format(len(df_fc)))
 
+df_fc['DEMANDE'] = df_fc['DEMANDE'].str.replace('G', '')
+
 
 ### BM 
 ### UNE SEULE LIGNE PAR PATIENT
@@ -108,7 +110,6 @@ df_bm.drop(indexNames , inplace=True)
 df_bm.sort_values(by=['DDN'], inplace=True)
 df_bm.sort_values(by=['PATIENT'], inplace=True)
 df_bm.reset_index(inplace=True)
-
 
 print('\nNombre de lignes BM depart = {}.'.format(len(df_bm)))
 
@@ -189,7 +190,7 @@ for i in range(len(df_bm)):
 
 
 print('Nombre de lignes solo = {}.'.format(comptage_solo))
-print('Nombre de doublons = {}.'.format(len(index_list_doub)))
+print('Nombre de lignes en doublons = {}.'.format(len(index_list_doub)))
 
 
 start_list = []
@@ -287,7 +288,14 @@ for h in range(len(start_list)-1) :
 
 fichier.close()
 
+print('Nombre de lignes doublons unifiees = {}.'.format(nombre))
 print('Nombre de lignes BM final = {}.'.format(nombre + comptage_solo))
+
+df_bm.rename(columns={'        FAMILLE': 'FAMILLE', \
+    '        ABM_NEURO': 'ABM_NEURO'}, inplace=True)
+
+
+df_bm['DEMANDE'] = df_bm['DEMANDE'].str.replace('G', '')
 
 
 ### MERGING
@@ -295,7 +303,30 @@ merge = df_fc.merge(df_bm, how='outer',\
  left_on='DEMANDE', right_on='DEMANDE', \
  suffixes=('_fc', '_bm'))
 
+del merge['index']
+
+print('\nNombre de lignes mergees = {}.'.format(len(merge)))
+
+merge.drop_duplicates(subset=['DEMANDE'], inplace=True, keep='first', ignore_index=True)
+
 print('\nNombre de lignes fichier final : {}.'.format(len(merge)))
+
+
+cols = ['PATIENT', 'NOM', 'PRENOM','DDN_fc', 'DDN_bm', 'SEXE',
+        'PATHOLOGIE_fc', 'PATHOLOGIE_bm','FAMILLE_fc', 'FAMILLE_bm', 'DEMANDE',
+        'RECEPTION_fc', 'RECEPTION_bm', 'INDICATIONS', 'DFTAGEXAM', 'DFTAGDEB',
+        'DFTATCFAM', 'DFTATCPRES', 'DFTMOD', 'DFTMODAUTRE', 'DFTFORMCLIN',
+        'DFTTC', 'DFTTCPRES', 'DFTTL', 'DFTTLPRES', 'DFTTM', 'DFTTMPRES', 
+        'DFTPARK', 'DFTHALLU', 'DFTAPRAX', 'DFTTO', 'DFTTOPRES', 'DFTMVAN', 
+        'DFTMVANPRES', 'DFTSLA', 'DFTSLADEB', 'DFTSLADEBAGE', 'DFTSLADEBEMG',
+        'DFTAUT', 'DFTAUTPRES', 'DFTPLS', 'DFTPLSPREC', 'DFTLCRAB', 
+        'DFTLCRABPREC', 'DFTLCRT', 'DFTLCRTPREC', 'DFTLCRPT', 'DFTLCRPTPREC',
+        'DFTLCRAUT', 'DFTLCRAUTPREC', 'DFTNEURTEST', 'DFTNEURTESTPREC',
+        'DFTNEURIRM', 'DFTNEURIRMPREC', 'DFTNEURSPECT', 'DFTNEURSPECTPREC',
+        'APPROBATION', 'NC', 'ACTION', 'REACTIFS', 'GENE_RESULTAT', 'ABM_NEURO',  'TITRE',
+        'PRESCRIPTEUR', 'ORIGINE', 'SERVICE']
+
+merge = merge[cols]
 
 
 # Exporter csv
