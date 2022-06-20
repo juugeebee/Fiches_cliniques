@@ -11,8 +11,9 @@ print('*******************************\n')
 
 
 # FICHIERS
-entree = 'entree/bm_2018_panel_DIPS.csv'
-sortie = 'sortie/bm_2018_panel_DIPS_sorted.txt'
+entree = 'entree/bm_2021_panel_DIPS.csv'
+sortie = 'sortie/bm_2021_panel_DIPS_sorted.txt'
+
 
 if os.path.exists(sortie):
     os.remove(sortie)
@@ -43,8 +44,7 @@ cols = ['RECEPTION', 'APPROBATION', 'NC', 'PATIENT', 'DDN', 'SEXE', 'FAMILLE',
 raw = raw[cols]
 
 
-### REMPLACER LES NA PAR DES - ET SUPPRIMER LES DOUBLONS
-raw = raw.fillna('-')
+### SUPPRIMER LES DOUBLONS
 raw.drop_duplicates(keep = 'first', inplace=True)
 
 
@@ -57,6 +57,7 @@ print('Nombre de lignes fichier de départ = {}.'.format(len(raw)))
 
 ### SELECTION DES LIGNES AVEC UN REACTIF = 'Panel DIPS'
 panel_dips = raw[raw['REACTIFS'].str.contains('Panel DIPS|PANEL DFT_SLA_PAR_ITD', na=False)]
+panel_dips = raw[raw['PATHOLOGIE'].str.contains('DFT', na=False)]
 panel_dips.reset_index(drop=True, inplace=True)
 
 print('Nombre de lignes "Panel DIPS" = {}.'.format(len(panel_dips)))
@@ -113,6 +114,13 @@ fichier.write("RECEPTION\tAPPROBATION\tNC\tPATIENT\tDDN\tSEXE\tFAMILLE\t\
 
 
 ### PARCOURS FICHIER INITAL
+
+
+### REMPLACER LES NA PAR DES -
+panel_dips = panel_dips.fillna('-')
+panel_dips.replace(to_replace='#VALUE!', value='-', inplace=True)
+panel_dips.replace(to_replace='£', value='-', inplace=True)
+
 
 # COPIE DES LIGNES SOLO
 
