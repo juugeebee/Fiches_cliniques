@@ -53,20 +53,20 @@ raw.sort_values(by=['DDN'], inplace=True)
 raw.sort_values(by=['PATIENT'], inplace=True)
 
 print(entree)
-print('Nombre de lignes fichier de départ = {}.'.format(len(raw)))
+print('Nombre de lignes fichier de depart = {}.\n'.format(len(raw)))
 
 
 ### SELECTION DES LIGNES AVEC UN REACTIF = 'Panel DIPS'
-dup = raw[raw['PATHOLOGIE'].str.contains('DFT', na=False)]
-dup.reset_index(drop=True, inplace=True)
+panel_dips = raw[raw['PATHOLOGIE'].str.contains('DFT', na=False)]
+panel_dips.reset_index(drop=True, inplace=True)
 
-print('Nombre de lignes "Genes DIPS / C9" = {}.'.format(len(dup)))
+print('Nombre de lignes "Genes DIPS / C9" = {}.'.format(len(panel_dips)))
 
 
 ### RECUPER UN DF AVEC LES DOUBLONS
 
-ids = dup["PATIENT"]
-dup = dup[ids.isin(ids[ids.duplicated()])].sort_values("PATIENT")
+ids = panel_dips["PATIENT"]
+dup = panel_dips[ids.isin(ids[ids.duplicated()])].sort_values("PATIENT")
 
 # RECUPERER LES INDEX
 index_list = dup.index.tolist()
@@ -90,22 +90,22 @@ fichier.write("RECEPTION\tAPPROBATION\tDELAI\tNC\tPATIENT\tDDN\tSEXE\tFAMILLE\t\
 
 comptage_solo = 0
 
-for i in range(len(dup)):
+for i in range(len(panel_dips)):
 
     if i not in index_list:
 
-        fichier.write(dup['RECEPTION'][i]+'\t'+\
-        dup['APPROBATION'][i]+'\t'+\
-        dup['DELAI'][i]+'\t'+\
-        dup['NC'][i]+'\t'+dup['PATIENT'][i]+'\t'+\
-        dup['DDN'][i]+'\t'+dup['SEXE'][i]+'\t'+\
-        dup['FAMILLE'][i]+'\t'+dup['DEMANDE'][i]+'\t'+\
-        dup['INDICATIONS'][i]+'\t'+dup['ACTION'][i]+'\t'+\
-        dup['REACTIFS'][i]+'\t'+\
-        dup['GENE_RESULTAT'][i]+'\t'+dup['ABM_NEURO'][i]+'\t'+\
-        dup['PATHOLOGIE'][i]+'\t'+dup['TITRE'][i]+'\t'+\
-        dup['PRESCRIPTEUR'][i]+'\t'+\
-        dup['ORIGINE'][i]+'\n')   
+        fichier.write(panel_dips['RECEPTION'][i]+'\t'+\
+        panel_dips['APPROBATION'][i]+'\t'+\
+        panel_dips['DELAI'][i]+'\t'+\
+        panel_dips['NC'][i]+'\t'+ panel_dips['PATIENT'][i]+'\t'+\
+        panel_dips['DDN'][i]+'\t'+ panel_dips['SEXE'][i]+'\t'+\
+        panel_dips['FAMILLE'][i]+'\t'+ panel_dips['DEMANDE'][i]+'\t'+\
+        panel_dips['INDICATIONS'][i]+'\t'+ panel_dips['ACTION'][i]+'\t'+\
+        panel_dips['REACTIFS'][i]+'\t'+\
+        panel_dips['GENE_RESULTAT'][i]+'\t'+ panel_dips['ABM_NEURO'][i]+'\t'+\
+        panel_dips['PATHOLOGIE'][i]+'\t'+ panel_dips['TITRE'][i]+'\t'+\
+        panel_dips['PRESCRIPTEUR'][i]+'\t'+\
+        panel_dips['ORIGINE'][i]+'\n')   
 
         comptage_solo = comptage_solo + 1    
 
@@ -190,6 +190,8 @@ for liste in index_list_doub:
         origine.append(dup['ORIGINE'][liste[0]])
         origine.append(dup['ORIGINE'][liste[1]])
 
+        comptage_solo = comptage_solo + 1
+
     else:
 
         for indice in range(len(liste)):
@@ -209,6 +211,8 @@ for liste in index_list_doub:
             titre.append(dup['TITRE'][liste[indice]])
             prescripteur.append(dup['PRESCRIPTEUR'][liste[indice]])       
             origine.append(dup['ORIGINE'][liste[indice]])
+
+        comptage_solo = comptage_solo + 1
 
 
     reception = list(set(reception))
@@ -247,6 +251,7 @@ for liste in index_list_doub:
 
 fichier.close()
 
+print('\nNombre de lignes fichier final = {}.'.format(comptage_solo))
 
 print('\n**********************')
 print('***** JOB DONE ! *****')
