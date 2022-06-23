@@ -16,6 +16,7 @@ bm = 'sortie/bm_concat.txt'
 bm_final = 'sortie/bm_final.txt'
 sortie = 'fc_bm_dft.txt'
 
+
 if os.path.exists('fc_bm_dft.txt'):
     os.remove('fc_bm_dft.txt')
     print('Precedent fichier de sortie supprime.\n')
@@ -36,9 +37,9 @@ fichier = 0
 
 files = os.listdir("sortie")
 
-with open("sortie/bm_concat.txt", "w") as new_file:
+with open(bm, "w") as new_file:
 
-    new_file.write('RECEPTION\tAPPROBATION\tNC\tPATIENT\tDDN\tSEXE\t\
+    new_file.write('RECEPTION\tAPPROBATION\tDELAI\tNC\tPATIENT\tDDN\tSEXE\t\
         FAMILLE\tDEMANDE\tINDICATIONS\tACTION\tREACTIFS\tGENE_RESULTAT\t\
         ABM_NEURO\tPATHOLOGIE\tTITRE\tPRESCRIPTEUR\tORIGINE\tSERVICE\n')
 
@@ -50,26 +51,22 @@ with open("sortie/bm_concat.txt", "w") as new_file:
 
             fichier = fichier + 1
 
-            with open("sortie/" + filename) as f:
-                
-                for line in f:
-                    text=f.readlines()
-                    comparaison = comparaison + (len(text)-1)
+            print(filename)
 
             with open("sortie/" + filename) as f:
 
                 for line in f:
                     
                     if not line.startswith('RECEPTION'):
-                        new_file.write(line)
-                        compteur = compteur + 1
 
+                            new_file.write(line)
+                            compteur = compteur + 1
+                    
                 new_file.write("\n")
 
 
 print('Nombre de fichiers BM : {}.'.format(fichier))
-print('Nombre de lignes dans les fichiers : {}.'.format(comparaison))
-print('Nombre de lignes concatenees : {}.'.format(compteur))
+print('\nNombre de lignes fichier bm_concat : {}.'.format(compteur))
 
 
 print('\n*****************')
@@ -79,14 +76,17 @@ print('*****************\n')
 
 ### FICHES CLINIQUES
 df_fc = pandas.read_csv(fc, encoding='utf-8', sep="\t", header=[0])
-print('Nombre de lignes Fiches Cliniques : {}.'.format(len(df_fc)))
-
 df_fc['DEMANDE'] = df_fc['DEMANDE'].str.replace('G', '')
+
+print('Nombre de lignes Fiches Cliniques : {}.'.format(len(df_fc)))
 
 
 ### BM 
 ### UNE SEULE LIGNE PAR PATIENT
 df_bm = pandas.read_csv(bm, sep="\t", header=[0])
+
+print('\nNombre de lignes BM depart = {}.'.format(len(df_bm)))
+
 
 ### Supprimer les espaces en debut de noms de patients
 df_bm['PATIENT'] = df_bm['PATIENT'].str.strip(to_strip = None)
@@ -95,14 +95,12 @@ df_bm['PATIENT'] = df_bm['PATIENT'].str.strip(to_strip = None)
 df_bm = df_bm.fillna('-')
 df_bm.drop_duplicates(keep = 'first', inplace=True)
 
+
 ### Supprimer les lignes où le patient est vide ou -
 
 # Get names of indexes for which column Stock has value No
 indexNames = df_bm[ df_bm['PATIENT'] == '' ].index
 # Delete these row indexes from dataFrame
-df_bm.drop(indexNames , inplace=True)
-
-indexNames = df_bm[ df_bm['PATIENT'] == '-' ].index
 df_bm.drop(indexNames , inplace=True)
 
 
@@ -111,54 +109,29 @@ df_bm.sort_values(by=['DDN'], inplace=True)
 df_bm.sort_values(by=['PATIENT'], inplace=True)
 df_bm.reset_index(inplace=True)
 
-print('\nNombre de lignes BM depart = {}.'.format(len(df_bm)))
+df_bm.rename(columns={"        FAMILLE": "FAMILLE"}, inplace=True)
+df_bm.rename(columns={"        ABM_NEURO": "ABM_NEURO"}, inplace=True)
 
 
-### RECUPER LES INDEX DES DOUBLONS
-dup = df_bm['PATIENT'].duplicated()
+print('Nombre de lignes BM apres curation = {}.'.format(len(df_bm)))
 
-index_list = []
 
-for i,e in enumerate(dup):
-    if e is True:
-        index_list.append(i)
+### RECUPER UN DF AVEC LES DOUBLONS
 
-index_list_doub = []
+ids = df_bm["PATIENT"]
+dup = df_bm[ids.isin(ids[ids.duplicated()])].sort_values("PATIENT")
 
-if len(index_list) != 0: 
+# RECUPERER LES INDEX
+index_list = dup.index.tolist()
 
-    for i in range(len(index_list)-1):
-        
-        if (index_list[i] + 1 == index_list[i+1]) and\
-            (index_list[i] - 1 not in index_list_doub):
-            
-            index_list_doub.append(index_list[i] - 1)
-            index_list_doub.append(index_list[i])
-        
-        else : 
-            
-            if (index_list[i] + 1 != index_list[i+1]) and\
-            (index_list[i] - 1 != index_list[i-1]):
-
-                index_list_doub.append(index_list[i] - 1)
-                index_list_doub.append(index_list[i])
-
-            else :
-
-                index_list_doub.append(index_list[i])
-
-    if index_list[-1] - 1 not in index_list_doub :
-        index_list_doub.append(index_list[-1] - 1)
-
-    index_list_doub.append(index_list[-1])
-
+dup.reset_index(drop=True, inplace=True)
 
 ### COPIER LES LIGNES UNIQUES DANS LE FICHIER DE SORTIE
 
 # CREATION FICHIER SORTIE
 fichier = open(bm_final, "a")
 
-fichier.write("RECEPTION\tAPPROBATION\tNC\tPATIENT\tDDN\tSEXE\tFAMILLE\t\
+fichier.write("RECEPTION\tAPPROBATION\tDELAI\tNC\tPATIENT\tDDN\tSEXE\tFAMILLE\t\
        DEMANDE\tINDICATIONS\tACTION\tREACTIFS\t\
        GENE_RESULTAT\tABM_NEURO\tPATHOLOGIE\tTITRE\tPRESCRIPTEUR\tORIGINE\t\
        SERVICE\n")
@@ -172,17 +145,18 @@ comptage_solo = 0
 
 for i in range(len(df_bm)):
 
-    if i not in index_list_doub:
+    if i not in index_list:
 
         fichier.write(df_bm['RECEPTION'][i]+'\t'+\
         df_bm['APPROBATION'][i]+'\t'+\
-        df_bm['NC'][i]+'\t'+df_bm['PATIENT'][i]+'\t'+\
-        df_bm['DDN'][i]+'\t'+df_bm['SEXE'][i]+'\t'+\
-        df_bm['        FAMILLE'][i]+'\t'+df_bm['DEMANDE'][i]+'\t'+\
-        df_bm['INDICATIONS'][i]+'\t'+df_bm['ACTION'][i]+'\t'+\
+        df_bm['DELAI'][i]+'\t'+\
+        df_bm['NC'][i]+'\t'+ df_bm['PATIENT'][i]+'\t'+\
+        df_bm['DDN'][i]+'\t'+ df_bm['SEXE'][i]+'\t'+\
+        df_bm['FAMILLE'][i]+'\t'+ df_bm['DEMANDE'][i]+'\t'+\
+        df_bm['INDICATIONS'][i]+'\t'+ df_bm['ACTION'][i]+'\t'+\
         df_bm['REACTIFS'][i]+'\t'+\
-        df_bm['GENE_RESULTAT'][i]+'\t'+df_bm['        ABM_NEURO'][i]+'\t'+\
-        df_bm['PATHOLOGIE'][i]+'\t'+df_bm['TITRE'][i]+'\t'+\
+        df_bm['GENE_RESULTAT'][i]+'\t'+ df_bm['ABM_NEURO'][i]+'\t'+\
+        df_bm['PATHOLOGIE'][i]+'\t'+ df_bm['TITRE'][i]+'\t'+\
         df_bm['PRESCRIPTEUR'][i]+'\t'+\
         df_bm['ORIGINE'][i]+'\n')   
 
@@ -190,71 +164,113 @@ for i in range(len(df_bm)):
 
 
 print('Nombre de lignes solo = {}.'.format(comptage_solo))
-print('Nombre de lignes en doublons = {}.'.format(len(index_list_doub)))
+print('Nombre de doublons = {}.'.format(len(index_list)))
 
 
-start_list = []
-stop_list = []
+### PARCOURIR LE DF DUP
 
-for i in index_list_doub:
+index_list_doub = []
 
-    if i != index_list_doub[-1]:
 
-        if (df_bm['PATIENT'][i] != df_bm['PATIENT'][i+1]):
-            stop_list.append(i)
+for i in range(len(index_list)-2) : 
+    
+    if (dup['PATIENT'][i] == dup['PATIENT'][i+1]) and \
+    (dup['PATIENT'][i+1] != dup['PATIENT'][i+2]):
 
-        else :
-            
-            if (df_bm['PATIENT'][i] != df_bm['PATIENT'][i-1]):
-                start_list.append(i)
+        reqd_Index = dup[dup['PATIENT']==dup['PATIENT'][i]].index.tolist()
+        index_list_doub.append(reqd_Index)
 
-nombre = 0
 
-for h in range(len(start_list)-1) : 
+for liste in index_list_doub:
+    
+    reception = []
+    approbation = []
+    delai = []
+    nc = []
+    patient = []
+    ddn = []
+    sexe = []
+    famille = []
+    demande = []
+    indications = []
+    action = []
+    reactifs = []
+    analyse = []
+    resultat = []
+    abm = []
+    patho = []
+    titre = []
+    prescripteur = []
+    origine = []
 
-    for i in range(start_list[h], stop_list[h],1):            
 
-        if i in start_list:
-            ligne_list = []
-            reception = []
-            approbation = []
-            nc = []
-            patient = []
-            ddn = []
-            sexe = []
-            famille = []
-            demande = []
-            indications = []
-            action = []
-            reactifs = []
-            analyse = []
-            resultat = []
-            abm = []
-            patho = []
-            titre = []
-            prescripteur = []
-            origine = []
-                    
-        reception.append(df_bm['RECEPTION'][i])
-        approbation.append(df_bm['APPROBATION'][i])
-        nc.append(df_bm['NC'][i])
-        patient.append(df_bm['PATIENT'][i])
-        ddn.append(df_bm['DDN'][i])
-        sexe.append(df_bm['SEXE'][i])
-        famille.append(df_bm['        FAMILLE'][i])
-        demande.append(df_bm['DEMANDE'][i])
-        indications.append(df_bm['INDICATIONS'][i])
-        action.append(df_bm['ACTION'][i])
-        reactifs.append(df_bm['REACTIFS'][i])
-        resultat.append(df_bm['GENE_RESULTAT'][i])
-        abm.append(df_bm['        ABM_NEURO'][i])
-        patho.append(df_bm['PATHOLOGIE'][i])
-        titre.append(df_bm['TITRE'][i])
-        prescripteur.append(df_bm['PRESCRIPTEUR'][i])
-        origine.append(df_bm['ORIGINE'][i])
+    if len(liste) == 2:
+
+        reception.append(dup['RECEPTION'][liste[0]])
+        reception.append(dup['RECEPTION'][liste[1]])
+        approbation.append(dup['APPROBATION'][liste[0]])
+        approbation.append(dup['APPROBATION'][liste[1]])
+        nc.append(dup['NC'][liste[0]])
+        nc.append(dup['NC'][liste[1]])
+        delai.append(dup['DELAI'][liste[0]])
+        delai.append(dup['DELAI'][liste[1]])
+        patient.append(dup['PATIENT'][liste[0]])
+        patient.append(dup['PATIENT'][liste[1]])
+        ddn.append(dup['DDN'][liste[0]])
+        ddn.append(dup['DDN'][liste[1]])
+        sexe.append(dup['SEXE'][liste[0]])
+        sexe.append(dup['SEXE'][liste[1]])
+        famille.append(dup['FAMILLE'][liste[0]])
+        famille.append(dup['FAMILLE'][liste[1]])
+        demande.append(dup['DEMANDE'][liste[0]])
+        demande.append(dup['DEMANDE'][liste[1]])
+        indications.append(dup['INDICATIONS'][liste[0]])
+        indications.append(dup['INDICATIONS'][liste[1]])
+        action.append(dup['ACTION'][liste[0]])
+        action.append(dup['ACTION'][liste[1]])
+        reactifs.append(dup['REACTIFS'][liste[0]])
+        reactifs.append(dup['REACTIFS'][liste[1]])
+        resultat.append(dup['GENE_RESULTAT'][liste[0]])
+        resultat.append(dup['GENE_RESULTAT'][liste[1]])
+        abm.append(dup['ABM_NEURO'][liste[0]])
+        abm.append(dup['ABM_NEURO'][liste[1]])
+        patho.append(dup['PATHOLOGIE'][liste[0]])
+        patho.append(dup['PATHOLOGIE'][liste[1]])
+        titre.append(dup['TITRE'][liste[0]])
+        titre.append(dup['TITRE'][liste[1]])
+        prescripteur.append(dup['PRESCRIPTEUR'][liste[0]])
+        prescripteur.append(dup['PRESCRIPTEUR'][liste[1]])        
+        origine.append(dup['ORIGINE'][liste[0]])
+        origine.append(dup['ORIGINE'][liste[1]])
+
+        comptage_solo = comptage_solo + 1
+
+    else:
+
+        for indice in range(len(liste)):
+
+            reception.append(dup['RECEPTION'][liste[indice]])
+            approbation.append(dup['APPROBATION'][liste[indice]])
+            approbation.append(dup['APPROBATION'][liste[indice]])
+            delai.append(dup['DELAI'][liste[indice]])
+            patient.append(dup['PATIENT'][liste[indice]])
+            demande.append(dup['DEMANDE'][liste[indice]])
+            indications.append(dup['INDICATIONS'][liste[indice]])
+            action.append(dup['ACTION'][liste[indice]])
+            reactifs.append(dup['REACTIFS'][liste[indice]])
+            resultat.append(dup['GENE_RESULTAT'][liste[indice]])
+            abm.append(dup['ABM_NEURO'][liste[indice]])
+            patho.append(dup['PATHOLOGIE'][liste[indice]])
+            titre.append(dup['TITRE'][liste[indice]])
+            prescripteur.append(dup['PRESCRIPTEUR'][liste[indice]])       
+            origine.append(dup['ORIGINE'][liste[indice]])
+
+        comptage_solo = comptage_solo + 1
+
 
     reception = list(set(reception))
     approbation = list(set(approbation))
+    delai = list(set(delai))
     nc = list(set(nc))
     patient = list(set(patient))
     ddn = list(set(ddn))
@@ -272,44 +288,51 @@ for h in range(len(start_list)-1) :
     origine = list(set(origine))
 
 
-    fichier.write("".join(reception)+'\t'+\
-        ",".join(approbation)+'\t'+\
-        ",".join(nc)+'\t'+",".join(patient)+'\t'+\
-        ",".join(ddn)+'\t'+",".join(sexe)+'\t'+\
-        ",".join(famille)+'\t'+",".join(demande)+'\t'+\
-        ",".join(indications)+'\t'+",".join(action)+'\t'+\
-        ",".join(reactifs)+'\t'+\
-        ",".join(resultat)+'\t'+",".join(abm)+'\t'+\
-        ",".join(patho)+'\t'+",".join(titre)+'\t'+\
-        ",".join(prescripteur)+'\t'+\
-        ",".join(origine)+'\n')
+    fichier.write(",".join(reception)+'\t'+\
+            ",".join(approbation)+'\t'+\
+            ",".join(delai)+'\t'+\
+            ",".join(nc)+'\t'+",".join(patient)+'\t'+\
+            ",".join(ddn)+'\t'+",".join(sexe)+'\t'+\
+            ",".join(famille)+'\t'+",".join(demande)+'\t'+\
+            ",".join(indications)+'\t'+",".join(action)+'\t'+\
+            ",".join(reactifs)+'\t'+\
+            ",".join(resultat)+'\t'+",".join(abm)+'\t'+\
+            ",".join(patho)+'\t'+",".join(titre)+'\t'+\
+            ",".join(prescripteur)+'\t'+\
+            ",".join(origine)+'\n')
 
-    nombre = nombre +1
 
 fichier.close()
 
-print('Nombre de lignes doublons unifiees = {}.'.format(nombre))
-print('Nombre de lignes BM final = {}.'.format(nombre + comptage_solo))
 
-df_bm.rename(columns={'        FAMILLE': 'FAMILLE', \
-    '        ABM_NEURO': 'ABM_NEURO'}, inplace=True)
+print('Nombre de lignes fichier bm_final = {}.\n'.format(comptage_solo))
 
 
-df_bm['DEMANDE'] = df_bm['DEMANDE'].str.replace('G', '')
+### CREATION DF BM FINAL
+bm_final = pandas.read_csv(bm_final, sep="\t", header=[0])
+
+### TRIER LES LIGNES PAR PATIENTS
+bm_final.sort_values(by=['DDN'], inplace=True)
+bm_final.sort_values(by=['PATIENT'], inplace=True)
+bm_final.reset_index(inplace=True)
+
+bm_final.rename(columns={"       DEMANDE": "DEMANDE"}, inplace=True)
+bm_final.rename(columns={"       GENE_RESULTAT": "GENE_RESULTAT"}, inplace=True)
+bm_final.rename(columns={"       SERVICE": "SERVICE"}, inplace=True)
 
 
 ### MERGING
-merge = df_fc.merge(df_bm, how='outer',\
+merge = df_fc.merge(bm_final, how='outer',\
  left_on='DEMANDE', right_on='DEMANDE', \
  suffixes=('_fc', '_bm'))
 
 del merge['index']
 
-print('\nNombre de lignes mergees = {}.'.format(len(merge)))
+print('Nombre de lignes mergees = {}.'.format(len(merge)))
 
 merge.drop_duplicates(subset=['DEMANDE'], inplace=True, keep='first', ignore_index=True)
 
-print('\nNombre de lignes fichier final : {}.'.format(len(merge)))
+print('Nombre de lignes fichier final : {}.'.format(len(merge)))
 
 
 cols = ['PATIENT', 'NOM', 'PRENOM','DDN_fc', 'DDN_bm', 'SEXE',
@@ -323,16 +346,18 @@ cols = ['PATIENT', 'NOM', 'PRENOM','DDN_fc', 'DDN_bm', 'SEXE',
         'DFTLCRABPREC', 'DFTLCRT', 'DFTLCRTPREC', 'DFTLCRPT', 'DFTLCRPTPREC',
         'DFTLCRAUT', 'DFTLCRAUTPREC', 'DFTNEURTEST', 'DFTNEURTESTPREC',
         'DFTNEURIRM', 'DFTNEURIRMPREC', 'DFTNEURSPECT', 'DFTNEURSPECTPREC',
-        'APPROBATION', 'NC', 'ACTION', 'REACTIFS', 'GENE_RESULTAT', 'ABM_NEURO',  'TITRE',
+        'APPROBATION', 'DELAI', 'NC', 'ACTION', 'REACTIFS', 'GENE_RESULTAT', 'ABM_NEURO',  'TITRE',
         'PRESCRIPTEUR', 'ORIGINE', 'SERVICE']
 
 merge = merge[cols]
 
 
+### TRIER LES LIGNES PAR PATIENTS
+merge.sort_values(by=['DEMANDE'], inplace=True)
+
+
 # Exporter csv
 merge.to_csv(sortie, index=False, encoding='utf-8', sep='\t')
-
-
 
 
 print('\n**********************')

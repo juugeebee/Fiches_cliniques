@@ -11,8 +11,8 @@ print('*******************************\n')
 
 
 # FICHIERS
-entree = 'entree/bm_2018_C9.csv'
-sortie = 'sortie/bm_2018_C9_sorted.txt'
+entree = 'entree/bm_2017_genes_DIPS.csv'
+sortie = 'sortie/bm_2017__genes_DIPS_sorted.txt'
 
 if os.path.exists(sortie):
     os.remove(sortie)
@@ -59,6 +59,12 @@ print('Nombre de lignes fichier de depart = {}.\n'.format(len(raw)))
 ### SELECTION DES LIGNES AVEC UN REACTIF = 'Panel DIPS'
 panel_dips = raw[raw['PATHOLOGIE'].str.contains('DFT', na=False)]
 panel_dips.reset_index(drop=True, inplace=True)
+
+
+### REMPLACER LES NA PAR DES -
+panel_dips = panel_dips.fillna('-')
+panel_dips.replace(to_replace='#VALUE!', value='-', inplace=True)
+panel_dips.replace(to_replace='£', value='-', inplace=True)
 
 print('Nombre de lignes "Genes DIPS / C9" = {}.'.format(len(panel_dips)))
 
@@ -111,7 +117,7 @@ for i in range(len(panel_dips)):
 
 
 print('Nombre de lignes solo = {}.'.format(comptage_solo))
-print('Nombre de doublons = {}.'.format(len(index_list)))
+print('Nombre de doublons = {}.\n'.format(len(index_list)))
 
 
 ### PARCOURIR LE DF DUP
@@ -251,7 +257,10 @@ for liste in index_list_doub:
 
 fichier.close()
 
-print('\nNombre de lignes fichier final = {}.'.format(comptage_solo))
+
+print(sortie)
+print('Nombre de lignes fichier final = {}.'.format(comptage_solo))
+
 
 print('\n**********************')
 print('***** JOB DONE ! *****')
