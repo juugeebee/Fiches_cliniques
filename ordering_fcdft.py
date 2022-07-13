@@ -21,30 +21,36 @@ champs_total = ['DFTAGEXAM', 'DFTAGDEB', 'DFTATCFAM', 'DFTATCPRES', 'DFTMOD'\
 
 # Fichiers
 entree = 'entree/fc_dft.csv'
-sortie = 'fc_dft_sorted.txt'
+sortie = 'sortie/fc_dft_sorted.txt'
 
 
 ### LECTURE DU FICHIER EXPORT GENNO
-raw = pandas.read_csv(entree, encoding='utf-16', sep="\t", header=[0])
-raw.rename(columns={"DATE RECEPTION": "RECEPTION"}, inplace=True)
+raw = pandas.read_csv(entree, sep=";", header=[0], encoding="ISO-8859-1")
 
 print('\nNombre de lignes fichier de depart = {}.'.format(len(raw)))
+
+
+raw.rename(columns={"DATE RECEPTION": "RECEPTION"}, inplace=True)
+
 
 # Creer la liste stop
 longueur_raw = raw.index.stop
 stop = []
 
 
+### AJOUTER UNE COLONNE ID
+raw['ID'] = raw['NOM'].str.replace(' ', '') +\
+ raw ['PRENOM'].str.replace(' ', '') + raw['DDN'].str.replace('/', '')
+
+
 # Trier les lignes par noms de patients
-raw.sort_values(by=['NOM'], inplace=True)
+raw.sort_values(by=['ID'], inplace=True)
 raw.reset_index(drop=True, inplace=True)
 
 
 for i in range(longueur_raw-1):
 
-    if (raw["NOM"][i] != raw["NOM"][i+1]) and \
-        (raw["PRENOM"][i] != raw["PRENOM"][i+1]) and \
-        (raw["DDN"][i] != raw["DDN"][i+1]):
+    if (raw["ID"][i] != raw["ID"][i+1]):
 
         stop.append(i)
 
@@ -75,10 +81,11 @@ for i in start:
     new_list.append(raw["NOM"][i])
     new_list.append(raw["PRENOM"][i])
     new_list.append(raw["DDN"][i])
+    new_list.append(raw["ID"][i])
     final_new.append(new_list)
 
 patient = pandas.DataFrame(data=final_new,columns=["PATHOLOGIE", "RECEPTION", "DEMANDE",\
-    "FAMILLE", "NOM", "PRENOM", "DDN"])
+    "FAMILLE", "NOM", "PRENOM", "DDN", "ID"])
 
 
 # Recuperer les champs/valeurs
@@ -106,6 +113,11 @@ col_vc = pandas.DataFrame(df_list, columns=champs_total)
 
 # Structure dataframe final
 final = pandas.concat([patient,col_vc], axis=1)
+
+
+### ENLEVER LES G DES NUMEROS DE DEMANDE
+final['DEMANDE'] = final['DEMANDE'].str.replace('G', '')
+
 
 print('Nombre de lignes fichier de sortie = {}.'.format(len(final)))
 
