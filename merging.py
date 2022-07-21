@@ -12,6 +12,8 @@ print('**********************\n')
 
 # Fichiers
 fc = 'sortie/fc_dft_sorted.txt'
+dosage = 'entree/dosages.csv'
+dosage_final = 'sortie/dosages_final.txt'
 bm_concat = 'sortie/bm_concat.txt'
 bm_final = 'sortie/bm_final.txt'
 sortie = 'fc_bm_dft.txt'
@@ -28,6 +30,11 @@ if os.path.exists("sortie/bm_concat.txt"):
 if os.path.exists("sortie/bm_final.txt"):
     os.remove("sortie/bm_final.txt")
     print('Precedent fichier bm_final supprime.\n')
+
+
+if os.path.exists("sortie/dosages_final.txt"):
+    os.remove("sortie/dosages_final.txt")
+    print('Precedent fichier dosages_final supprime.\n')
 
 
 # Concatener tous les fichiers de sortie BM
@@ -69,9 +76,9 @@ print('Nombre de fichiers BM : {}.'.format(fichier))
 print('\nNombre de lignes fichier bm_concat : {}.'.format(compteur))
 
 
-print('\n*****************')
-print('**** MERGING ****')
-print('*****************\n')
+print('\n*************************')
+print('**** MERGING BM + FC ****')
+print('*************************\n')
 
 
 ### FICHES CLINIQUES
@@ -108,7 +115,7 @@ df_bm.drop(indexNames , inplace=True)
 
 ### TRIER LES LIGNES PAR PATIENTS
 df_bm.sort_values(by=['ID'], inplace=True)
-df_bm.reset_index(inplace=True)
+df_bm.reset_index(inplace=True, drop=True)
 
 df_bm.rename(columns={"        FAMILLE": "FAMILLE"}, inplace=True)
 df_bm.rename(columns={"        ABM_NEURO": "ABM_NEURO"}, inplace=True)
@@ -298,19 +305,19 @@ for liste in index_list_doub:
     origine = list(set(origine))
 
 
-    fichier.write(",".join(reception)+'\t'+\
-            ",".join(approbation)+'\t'+\
-            ",".join(delai)+'\t'+\
-            ",".join(nc)+'\t'+",".join(patient)+'\t'+\
-            ",".join(ddn)+'\t'+",".join(ids)+'\t'+\
-            ",".join(sexe)+'\t'+\
-            ",".join(famille)+'\t'+",".join(demande)+'\t'+\
-            ",".join(indications)+'\t'+",".join(action)+'\t'+\
-            ",".join(reactifs)+'\t'+\
-            ",".join(resultat)+'\t'+",".join(abm)+'\t'+\
-            ",".join(patho)+'\t'+",".join(titre)+'\t'+\
-            ",".join(prescripteur)+'\t'+\
-            ",".join(origine)+'\n')
+    fichier.write(" & ".join(reception)+'\t'+\
+            " & ".join(approbation)+'\t'+\
+            " & ".join(delai)+'\t'+\
+            " & ".join(nc)+'\t'+" & ".join(patient)+'\t'+\
+            " & ".join(ddn)+'\t'+" & ".join(ids)+'\t'+\
+            " & ".join(sexe)+'\t'+\
+            " & ".join(famille)+'\t'+" & ".join(demande)+'\t'+\
+            " & ".join(indications)+'\t'+" & ".join(action)+'\t'+\
+            " & ".join(reactifs)+'\t'+\
+            " & ".join(resultat)+'\t'+" & ".join(abm)+'\t'+\
+            " & ".join(patho)+'\t'+" & ".join(titre)+'\t'+\
+            " & ".join(prescripteur)+'\t'+\
+            " & ".join(origine)+'\n')
 
 
 fichier.close()
@@ -342,7 +349,7 @@ print('Nombre de lignes mergees = {}.'.format(len(merge)))
 
 merge.drop_duplicates(subset=['ID'], inplace=True, keep='first', ignore_index=True)
 
-print('Nombre de lignes fichier final : {}.'.format(len(merge)))
+print('Nombre de lignes fichier final sans dosage: {}.'.format(len(merge)))
 
 
 cols = ['PATIENT', 'NOM', 'PRENOM','DDN_fc', 'DDN_bm', 'ID','SEXE',
@@ -371,13 +378,168 @@ print('**** AJOUT DOSAGES ****')
 print('***********************\n')
 
 
+### LECTURE DU FICHIER EXPORT GENNO
+dosage = pandas.read_csv(dosage, sep=";", header=[0], encoding="ISO-8859-1")
+
+print('Nombre de lignes dosages depart = {}.'.format(len(dosage)))
 
 
+### AJOUTER UNE COLONNE ID
+dosage['ID'] = dosage['NOM'].str.replace(' ', '') +\
+ dosage['PRENOM'].str.replace(' ', '') + dosage['DDN'].str.replace('/', '')
 
 
+del dosage['NOM']
+del dosage['PRENOM']
+del dosage['DDN']
+del dosage['DATE RECEPTION']
+del dosage['NOM PRESC.']
+del dosage['VILLE']
+dosage.rename(columns={"COMMENTAIRE": "DOSAGE_PGRN"}, inplace=True)
 
-# Exporter csv
-merge.to_csv(sortie, index=False, encoding='utf-8', sep='\t')
+
+### SUPPRIMER LES DOUBLONS
+dosage.drop_duplicates(keep = 'first', inplace=True)
+
+
+### SUPPRIMER LES LIGNES DOSAGES OU IDS VIDES
+dosage = dosage.dropna(axis = 0, how ='any')
+
+
+### TRIER LES LIGNES PAR PATIENTS
+dosage.sort_values(by=['ID'], inplace=True)
+dosage.reset_index(inplace=True, drop=True)
+
+
+### NOUVEAU DF AVEC SEULEMENT DES LIGNES DE DOSAGES
+dosage_reel = dosage[dosage["DOSAGE_PGRN"].str.contains('pgrn =')]
+dosage_reel.reset_index(inplace=True, drop=True)
+
+print('Nombre de lignes avec dosages reels = {}.'.format(len(dosage_reel)))
+
+
+### DUPIER S'IL Y A DES DOUBLONS
+dup = dosage_reel['ID'].duplicated()
+
+
+### RECUPERER LES INDEX DES DOUBLONS
+dup_list = []
+dupmoinsun = []
+
+for i in range(len(dup)) : 
+    if dup[i] == True : 
+        dup_list.append(i)
+
+        if i-1 not in dup_list : 
+            dupmoinsun.append(i-1)
+        
+        dupmoinsun.append(i)
+
+
+# Trier
+dupmoinsun = sorted(dupmoinsun)
+
+
+### ECRITURE FICHIER SORTIE
+
+solo = 0
+stop = []
+ids = []
+ids_ligne = []
+pgrn = []
+pgrn_ligne = []
+
+
+with open(dosage_final, "w") as dosage_file:
+
+    dosage_file.write('ID\tDOSAGE_PGRN\n')
+
+    ### SOLO
+    for i in range(len(dosage_reel)):
+
+        if i not in dupmoinsun:
+
+            dosage_file.write(dosage_reel['ID'][i]+'\t'+\
+            dosage_reel['DOSAGE_PGRN'][i]+'\n')   
+
+            solo = solo + 1
+
+
+    ## DOUBLONS
+    for i in dupmoinsun :
+
+        if i+1 not in dupmoinsun : 
+            stop.append(i+1)
+
+
+    dup_final = dupmoinsun + stop
+    dup_final = sorted(dup_final)
+
+    
+    for i in dup_final :
+
+        if i+1 in dup_final :
+
+            if dosage_reel['ID'][i] == dosage_reel['ID'][i+1] :
+
+                ids.append(dosage_reel['ID'][i])
+                pgrn.append(dosage_reel['DOSAGE_PGRN'][i])
+
+            else :
+
+                ids.append(dosage_reel['ID'][i])
+                pgrn.append(dosage_reel['DOSAGE_PGRN'][i])
+                ids_ligne.append(ids)
+                pgrn_ligne.append(pgrn)
+                ids = []
+                pgrn = []
+
+
+    # Unifier les noms dans chaque liste ids
+    ids_final = []
+        
+    for element in ids_ligne : 
+
+        ids_final.append(element[0]) 
+
+
+    # Ecrire dans le fichier
+    for i in range(len(ids_final)) :
+
+        pgrn_i = " & ".join(pgrn_ligne[i])  
+        dosage_file.write( (ids_final[i]) + '\t' + pgrn_i + '\n')
+
+
+dosage_file.close()
+
+        
+print('Nombre de lignes solo = {}.'.format(solo))
+print('Nombre de doublons = {}.'.format(len(ids_final)))
+print('Nombre de lignes fichier dosages_final = {}.'.format(solo + len(ids_final)))
+
+
+print('\n*********************************')
+print('**** MERGING BM/FC + DOSAGES ****')
+print('*********************************\n')
+
+### LECTURE DU FICHIER dosages_final
+dosage_tri = pandas.read_csv(dosage_final, sep="\t", header=[0], encoding="ISO-8859-1")
+
+
+### MERGING
+fifi = merge.merge(dosage_tri, how='left',\
+ left_on='ID', right_on='ID', \
+ suffixes=('_fc_bm', '_pgrn'))
+
+print('Nombre de lignes mergees = {}.'.format(len(fifi)))
+
+### TRIER LES LIGNES PAR PATIENTS
+fifi.sort_values(by=['ID'], inplace=True)
+
+
+### Exporter csv
+fifi.to_csv(sortie, index=False, encoding='utf-8', sep='\t')
+
 
 print('\n**********************')
 print('***** JOB DONE ! *****')

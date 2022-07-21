@@ -11,8 +11,8 @@ print('*******************************\n')
 
 
 # FICHIERS
-entree = 'entree/bm_2017_panel_DIPS.csv'
-sortie = 'sortie/bm_2017_panel_DIPS_sorted.txt'
+entree = 'entree/bm_2021_panel_DIPS.csv'
+sortie = 'sortie/bm_2021_panel_DIPS_sorted.txt'
 
 
 if os.path.exists(sortie):
@@ -263,19 +263,19 @@ for liste in index_list_doub:
     origine = list(set(origine))
 
 
-    fichier.write(",".join(reception)+'\t'+\
-            ",".join(approbation)+'\t'+\
-            ",".join(delai)+'\t'+\
-            ",".join(nc)+'\t'+",".join(patient)+'\t'+\
-            ",".join(ddn)+'\t'+",".join(ids)+'\t'+\
-            ",".join(sexe)+'\t'+\
-            ",".join(famille)+'\t'+",".join(demande)+'\t'+\
-            ",".join(indications)+'\t'+",".join(action)+'\t'+\
-            ",".join(reactifs)+'\t'+\
-            ",".join(resultat)+'\t'+",".join(abm)+'\t'+\
-            ",".join(patho)+'\t'+",".join(titre)+'\t'+\
-            ",".join(prescripteur)+'\t'+\
-            ",".join(origine)+'\n')
+    fichier.write(" & ".join(reception)+'\t'+\
+            " & ".join(approbation)+'\t'+\
+            " & ".join(delai)+'\t'+\
+            " & ".join(nc)+'\t'+" & ".join(patient)+'\t'+\
+            " & ".join(ddn)+'\t'+" & ".join(ids)+'\t'+\
+            " & ".join(sexe)+'\t'+\
+            " & ".join(famille)+'\t'+" & ".join(demande)+'\t'+\
+            " & ".join(indications)+'\t'+" & ".join(action)+'\t'+\
+            " & ".join(reactifs)+'\t'+\
+            " & ".join(resultat)+'\t'+" & ".join(abm)+'\t'+\
+            " & ".join(patho)+'\t'+",".join(titre)+'\t'+\
+            " & ".join(prescripteur)+'\t'+\
+            " & ".join(origine)+'\n')
 
 
 fichier.close()
