@@ -538,7 +538,7 @@ fifi.sort_values(by=['ID'], inplace=True)
 
 
 ### Exporter csv
-fifi.to_csv(sortie, index=False, encoding='utf-8', sep='\t')
+fifi.to_csv(sortie, index=False, encoding='utf-16', sep='\t')
 
 
 print('\n**********************')

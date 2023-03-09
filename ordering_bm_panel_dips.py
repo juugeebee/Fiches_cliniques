@@ -11,8 +11,8 @@ print('*******************************\n')
 
 
 # FICHIERS
-entree = 'entree/bm_2021_panel_DIPS.csv'
-sortie = 'sortie/bm_2021_panel_DIPS_sorted.txt'
+entree = 'entree/bm_2022_panel_DIPS.csv'
+sortie = 'sortie/bm_2022_panel_DIPS_sorted.txt'
 
 
 if os.path.exists(sortie):

@@ -11,8 +11,8 @@ print('*******************************\n')
 
 
 # FICHIERS
-entree = 'entree/bm_2021_C9.csv'
-sortie = 'sortie/bm_2021_C9_sorted.txt'
+entree = 'entree/bm_2022_genes_DIPS.csv'
+sortie = 'sortie/bm_2022_genes_DIPS_sorted.txt'
 
 if os.path.exists(sortie):
     os.remove(sortie)

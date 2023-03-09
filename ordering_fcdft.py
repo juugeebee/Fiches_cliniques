@@ -20,12 +20,12 @@ champs_total = ['DFTAGEXAM', 'DFTAGDEB', 'DFTATCFAM', 'DFTATCPRES', 'DFTMOD'\
 
 
 # Fichiers
-entree = 'entree/fc_dft.csv'
-sortie = 'sortie/fc_dft_sorted.txt'
+entree = 'entree/fc_dft_2022.csv'
+sortie = 'sortie/fc_dft_2022_sorted.txt'
 
 
 ### LECTURE DU FICHIER EXPORT GENNO
-raw = pandas.read_csv(entree, sep=";", header=[0], encoding="ISO-8859-1")
+raw = pandas.read_csv(entree, sep="\t", header=[0], encoding="ISO-8859-1")
 
 print('\nNombre de lignes fichier de depart = {}.'.format(len(raw)))
 
