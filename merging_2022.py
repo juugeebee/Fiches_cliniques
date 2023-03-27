@@ -17,6 +17,7 @@ dosage = 'entree/dosages_2022.csv'
 dosage_final = 'sortie/dosages_final_2022.txt'
 bm_concat = 'sortie/bm_concat_2022.txt'
 bm_final = 'sortie/bm_final_2022.txt'
+merge_final = 'sortie/merge_final_2022.txt'
 sortie = 'fc_bm_dft_2022.txt'
 
 
@@ -331,6 +332,7 @@ print('Nombre de lignes fichier bm_final = {}.\n'.format(comptage_solo))
 ## CREATION DF BM FINAL
 bm_final = pandas.read_csv(bm_final, sep="\t", header=[0])
 
+
 ### TRIER LES LIGNES PAR PATIENTS
 bm_final.sort_values(by=['ID'], inplace=True)
 bm_final.reset_index(inplace=True)
@@ -536,8 +538,14 @@ fifi = merge.merge(dosage_tri, how='left',\
 print('Nombre de lignes mergees _fc_bm_pgrn = {}.'.format(len(fifi)))
 
 
-### TRIER LES LIGNES PAR PATIENTS
-fifi.sort_values(by=['ID'], inplace=True)
+### TRIER LES LIGNES PAR DEMANDES
+fifi.sort_values(by=['DEMANDE_fc'], inplace=True)
+fifi.dropna(how = 'all', inplace = True)
+fifi.drop_duplicates(keep = 'first', inplace=True)
+
+
+# ### Exporter csv
+fifi.to_csv(merge_final, index=False, encoding='utf-8', sep='\t')
 
 
 print('\n*********************************')
@@ -545,29 +553,36 @@ print('**** COMPLETER FICHIER FINAL ****')
 print('*********************************\n')
 
 ### LECTURE DU FICHIER a completer
-riri = pandas.read_csv(a_completer, sep="\t", header=[0], encoding="utf-8")
+riri = pandas.read_csv(a_completer, sep="\t", header=[0], encoding="utf-8", dtype='str')
+
 
 riri.rename(columns={"DFTSLA oui / non": "DFTSLA"}, inplace=True)
 riri.rename(columns={"Info cliniques suffisantes?": "Infos cliniques suffisantes"}, inplace=True)
 riri.rename(columns={"Ajout de la sÃ©rie 145": "Ajout de la serie 145"}, inplace=True)
 
 
+### TRIER LES LIGNES PAR DEMANDES
+riri.sort_values(by=['DEMANDE_fc'], inplace=True)
+riri.dropna(how = 'all', inplace = True)
+riri.drop_duplicates(keep = 'first', inplace=True)
+
 ## MERGING
 
+
 # convert DEMANDE_fc variable to str
-fifi['DEMANDE_fc'] = fifi['DEMANDE_fc'].astype(str)
-riri['DEMANDE_fc'] = riri['DEMANDE_fc'].astype(str)
-
-print(fifi.columns)
-print(riri.columns)
+fifi['DEMANDE_fc'] = fifi['DEMANDE_fc'].astype(str, errors='ignore')
+riri['DEMANDE_fc'] = fifi['DEMANDE_fc'].astype(str, errors='ignore')
 
 
-loulou = riri.merge(fifi, how='left',\
+loulou = riri.merge(fifi, how='outer',\
  left_on='DEMANDE_fc', right_on='DEMANDE_fc', \
  suffixes=('_final', '_fc_bm_pgrn'))
 
 
 print('Nombre de lignes mergees _final = {}.'.format(len(loulou)))
+
+
+loulou.rename(columns={' ': 'Sexe_final'}, inplace=True)
 
 
 ### Exporter csv
