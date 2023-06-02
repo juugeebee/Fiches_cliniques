@@ -12,6 +12,7 @@ print('***************************\n')
 
 # Fichiers
 a_completer = 'entree/2022_a_completer.csv'
+fichier_travail = 'entree/2022_fichier_de_travail.csv'
 fc = 'sortie/fc_dft_2022_sorted.txt'
 dosage = 'entree/dosages_2022.csv'
 dosage_final = 'sortie/dosages_final_2022.txt'
@@ -531,15 +532,13 @@ dosage_tri = pandas.read_csv(dosage_final, sep="\t", header=[0], encoding="ISO-8
 
 
 ### MERGING
-fifi = merge.merge(dosage_tri, how='left',\
- left_on='ID', right_on='ID', \
- suffixes=('_fc_bm', '_pgrn'))
+fifi = merge.merge(dosage_tri, how='left', left_on='ID', right_on='ID', suffixes=('_fc_bm', '_pgrn'))
 
-print('Nombre de lignes mergees _fc_bm_pgrn = {}.'.format(len(fifi)))
+print('Nombre de lignes mergees fc_bm_pgrn = {}.'.format(len(fifi)))
 
 
 ### TRIER LES LIGNES PAR DEMANDES
-fifi.sort_values(by=['DEMANDE_fc'], inplace=True)
+fifi.sort_values(by=['ID'], inplace=True)
 fifi.dropna(how = 'all', inplace = True)
 fifi.drop_duplicates(keep = 'first', inplace=True)
 
@@ -548,35 +547,59 @@ fifi.drop_duplicates(keep = 'first', inplace=True)
 fifi.to_csv(merge_final, index=False, encoding='utf-8', sep='\t')
 
 
+print('\n**************************************')
+print('**** AJOUTER "ID" A FICHIER FINAL ****')
+print('**************************************')
+
+
+### LECTURE DU FICHIER A COMPLETER
+travail_a_completer = pandas.read_csv(a_completer, sep="\t", header=[0], encoding="utf-8", dtype='str')
+
+travail_a_completer.rename(columns={"DFTSLA oui / non": "DFTSLA"}, inplace=True)
+travail_a_completer.rename(columns={"Info cliniques suffisantes?": "Infos cliniques suffisantes"}, inplace=True)
+travail_a_completer.rename(columns={"Ajout de la sÃ©rie 145": "Ajout de la serie 145"}, inplace=True)
+
+
+### LECTURE DU FICHIER DE TRAVAIL
+travail =  pandas.read_csv(fichier_travail, sep=";", header=[0], encoding="utf-8", dtype='str')
+
+
+### MERGER FICHIER DE TRAVAIL AVEC FICHIER A COMPLETER POUR RECUPERER LA COLONNE ID
+
+completer = travail_a_completer.merge(travail, how='left', left_on='DEMANDE_fc', right_on='DEMANDE_fc')
+
+completer.to_csv('sortie/travail_a_completer_2022.csv', index=False, encoding='utf-8', sep='\t')
+
+
 print('\n*********************************')
 print('**** COMPLETER FICHIER FINAL ****')
 print('*********************************\n')
 
-### LECTURE DU FICHIER a completer
-riri = pandas.read_csv(a_completer, sep="\t", header=[0], encoding="utf-8", dtype='str')
-
-
-riri.rename(columns={"DFTSLA oui / non": "DFTSLA"}, inplace=True)
-riri.rename(columns={"Info cliniques suffisantes?": "Infos cliniques suffisantes"}, inplace=True)
-riri.rename(columns={"Ajout de la sÃ©rie 145": "Ajout de la serie 145"}, inplace=True)
-
 
 ### TRIER LES LIGNES PAR DEMANDES
-riri.sort_values(by=['DEMANDE_fc'], inplace=True)
-riri.dropna(how = 'all', inplace = True)
-riri.drop_duplicates(keep = 'first', inplace=True)
+completer.sort_values(by=['ID'], inplace=True)
+completer.dropna(how = 'all', inplace = True)
+completer.drop_duplicates(keep = 'first', inplace=True)
 
-## MERGING
-
-
-# convert DEMANDE_fc variable to str
-fifi['DEMANDE_fc'] = fifi['DEMANDE_fc'].astype(str, errors='ignore')
-riri['DEMANDE_fc'] = fifi['DEMANDE_fc'].astype(str, errors='ignore')
+### MERGING
+loulou = completer.merge(fifi, how='outer', left_on='ID', right_on='ID', suffixes=('_final', '_fc_bm_pgrn'))
 
 
-loulou = riri.merge(fifi, how='outer',\
- left_on='DEMANDE_fc', right_on='DEMANDE_fc', \
- suffixes=('_final', '_fc_bm_pgrn'))
+del loulou['PATIENT']
+del loulou['NOM']
+del loulou['PRENOM']
+loulou.sort_values(by=['ID'], inplace=True)
+loulou.dropna(how = 'all', inplace = True)
+loulou.drop_duplicates(keep = 'first', inplace=True)
+
+
+# Positionner la colonne ID en 1ère position
+# shift column 'Name' to first position
+first_column = loulou.pop('ID')
+  
+# insert column using insert(position,column_name,
+# first_column) function
+loulou.insert(0, 'ID', first_column)
 
 
 print('Nombre de lignes mergees _final = {}.'.format(len(loulou)))
